@@ -1,24 +1,37 @@
-let score = 0;
+
+// add: 
+
+// msg when wrong answer is provided
+// timeleft to model, remove global
+
 let timeLeft = 5;
 
 // Model
 // data and app logic
 
-
 const Model = (function () {
+
     const words = ["compensation", "consciousness", "shift", "knowledge", "pierce",
         "zest", "exempt", "live", "find", "motorist", "session", "quantity", "bread", "advantage"];
 
+    let data = {
+        score: 0, 
+        timeLeft: 5
+    } 
+
     function handlePickWord() {
-        const randomIndex = Math.floor(Math.random() * words.length) + 1;
+        const randomIndex = Math.floor(Math.random() * words.length);
+        if(!words[randomIndex]) {
+            console.log(randomIndex);
+        }
         return words[randomIndex];
     }
 
     function handleUpdateScore(word, userInput) {
-        if (userInput === word) {
-            score++;
+        if (word === userInput) {
+            data.score++;
         } else {
-            score = 0;
+            data.score = 0;
         }
     }
 
@@ -26,15 +39,14 @@ const Model = (function () {
         const intervalId = setInterval(() => {
             handleDisplayGameActive(timeLeft > 0);
         }, 200);
-
         return intervalId;
     }
 
     return {
-        score,
         handlePickWord,
         handleUpdateScore,
-        handleTrackGameStatus
+        handleTrackGameStatus, 
+        data
     }
 })();
 
@@ -44,15 +56,17 @@ const Model = (function () {
 
 const View = (function () {
 
-    let userInput = "";
+    const displayWordElement = document.getElementById("word");
+    const displayScoreElement = document.getElementById("score");
+    const timeLeftElement = document.getElementById("time-left");
+    const gameOverElement = document.getElementById("game-over");
+    const startAgainBtn = document.getElementById("btn");
 
     function handleDisplayWord(word) {
-        const displayWordElement = document.getElementById("word");
         displayWordElement.innerHTML = word;
     }
 
-    function handleDisplayScore(score) {
-        const displayScoreElement = document.getElementById("score");
+    function handleDisplayScore(score = 0) {
         displayScoreElement.innerHTML = score;
     }
 
@@ -62,9 +76,7 @@ const View = (function () {
         return userInput;
     }
 
-
     function handleDisplayTimeLeft() {
-        const timeLeftElement = document.getElementById("time-left");
         timeLeft = 5;
 
         const inervalId = setInterval(() => {
@@ -73,14 +85,10 @@ const View = (function () {
             }
             timeLeftElement.innerHTML = timeLeft;
         }, 1000);
-
         return inervalId;
     }
 
     function handleDisplayGameActive(gameActive) {
-        const gameOverElement = document.getElementById("game-over");
-        const startAgainBtn = document.getElementById("btn");
-
         if (gameActive) {
             gameOverElement.innerHTML = "";
             startAgainBtn.disabled = true;
@@ -95,8 +103,7 @@ const View = (function () {
         handleDisplayScore,
         handleTakeInput,
         handleDisplayTimeLeft,
-        handleDisplayGameActive,
-        userInput
+        handleDisplayGameActive
     }
 
 })();
@@ -107,13 +114,13 @@ const View = (function () {
 
 const Controller = (function (Model, View) {
 
+    const startGameBtn = document.getElementById("start-game");
     const inputElement = document.getElementById("input");
     const startAgainBtn = document.getElementById("btn");
 
-
-    window.addEventListener("load", init);
-    inputElement.addEventListener("change", handleTakeInput);
+    startGameBtn.addEventListener("click", init);
     startAgainBtn.addEventListener("click", init);
+    inputElement.addEventListener("change", handleTakeInput);
 
     let word;
     let timeLeftInterval;
@@ -127,15 +134,16 @@ const Controller = (function (Model, View) {
         word = Model.handlePickWord();
         View.handleDisplayWord(word);
         Model.handleUpdateScore(word);
-        View.handleDisplayScore(0);
+        View.handleDisplayScore();
         View.handleDisplayGameActive(true);
+        startGameBtn.hidden = true;
     }
 
     function handleTakeInput(e) {
         clearInterval(timeLeftInterval);
         const userInput = View.handleTakeInput(e);
         Model.handleUpdateScore(word, userInput);
-        View.handleDisplayScore(score);
+        View.handleDisplayScore(Model.data.score);
         word = Model.handlePickWord();
         View.handleDisplayWord(word);
         timeLeftInterval = View.handleDisplayTimeLeft();
